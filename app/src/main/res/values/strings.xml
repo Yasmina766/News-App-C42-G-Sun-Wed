@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">News App C42 G Sun Wed</string>
+    <string name="news_app_logo_image">News App Logo image</string>
+    <string name="app_development_signature">App Development Signature</string>
+    <string name="icon_search">Icon search</string>
+    <string name="open_side_menu_icon">Open Side menu icon</string>
+    <string name="home">Home</string>
+    <string name="good_morning_here_is_some_news_for_you">Good Morning\nHere is Some News For You</string>
+    <string name="general">General</string>
+    <string name="business">Business</string>
+    <string name="sports">Sports</string>
+    <string name="technology">Technology</string>
+    <string name="entertainment">Entertainment</string>
+    <string name="science">Science</string>
+    <string name="medicine">Medicine</string>
+    <string name="category_image">Category image for filteration</string>
+    <string name="view_all">View All</string>
+</resources>
