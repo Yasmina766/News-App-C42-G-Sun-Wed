@@ -29,6 +29,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge() // android 15 -> Forced to Enable Edge-to-edge
         setContent {
+            // 1- MVVM
+            // 2- Pagination (android paging 3 )
             NewsAppC42GSunWedTheme {
                 LaunchedEffect(Unit) {
 //                    getSources()

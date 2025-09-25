@@ -1,6 +1,5 @@
 package com.route.newsappc42gsunwed.ui.screens.news
 
-import android.util.Log
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,7 +24,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -35,29 +33,27 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.paging.PagingData
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import com.route.newsappc42gsunwed.api.ApiManager
-import com.route.newsappc42gsunwed.api.model.ArticlesItem
-import com.route.newsappc42gsunwed.api.model.NewsResponse
+import com.route.newsappc42gsunwed.api.model.ArticlesItemDM
 import com.route.newsappc42gsunwed.api.model.SourcesItemDM
-import com.route.newsappc42gsunwed.api.model.SourcesResponse
-import com.route.newsappc42gsunwed.model.CategoryDM
 import com.route.newsappc42gsunwed.ui.theme.gray
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 
 @Composable
-fun NewsScreen(categoryAPIId: String, modifier: Modifier = Modifier) {
+fun NewsScreen(
+    categoryAPIId: String,
+    modifier: Modifier = Modifier,
+    viewModel: NewsViewModel = viewModel(),
+) {
     Column(modifier = modifier.fillMaxSize()) {
-        val newsList = remember { mutableStateListOf<ArticlesItem>() }
-        SourcesTabRow(categoryAPIId) {
-            newsList.clear()
-            newsList.addAll(it)
-        }
+        SourcesTabRow(categoryAPIId, viewModel = viewModel)           // empty -> list
         Spacer(Modifier.height(8.dp))
-        NewsLazyColumn(newsList)
+
+        NewsLazyColumn(viewModel = viewModel) // empty -> listOf
     }
 }
 
@@ -71,25 +67,23 @@ private fun NewsScreenPreview() {
 fun SourcesTabRow(
     categoryApiId: String,
     modifier: Modifier = Modifier,
-    onNewsListUpdated: (List<ArticlesItem>) -> Unit
+    viewModel: NewsViewModel,
 ) {
-    val sources = remember {
-        mutableStateListOf<SourcesItemDM>()
-    }
     LaunchedEffect(Unit) {
-        getSources(categoryApiId) {
-            sources.clear()
-            sources.addAll(it)
+        viewModel.getSources(categoryApiId)
+    }
+    var selectedIndex by remember { mutableIntStateOf(-1) }
+    LaunchedEffect(viewModel.sourcesList.isNotEmpty()) {
+        if (viewModel.sourcesList.isNotEmpty()) {
+            viewModel.selectedSourceId.value = (viewModel.sourcesList[0].id ?: "")
+            selectedIndex = 0
         }
     }
-    var selectedIndex by remember { mutableIntStateOf(0) }
     LazyRow(modifier) {
-        itemsIndexed(sources) { index, item ->
+        itemsIndexed(viewModel.sourcesList) { index, item ->
             SourcesItem(item, index, selectedIndex) { clickedIndex, sourcesItem ->
                 selectedIndex = clickedIndex
-                getNewsBySource(sourcesItem.id ?: "") {
-                    onNewsListUpdated(it)
-                }
+                viewModel.selectedSourceId.value = (sourcesItem.id ?: "")
             }
         }
     }
@@ -150,13 +144,18 @@ private fun SourcesItemPreview() {
 @Preview
 @Composable
 private fun SourcesTabRowPreview() {
-    SourcesTabRow("") {}
+    SourcesTabRow("", viewModel = viewModel())
 }
 
 @Composable
-fun NewsLazyColumn(newsList: List<ArticlesItem>, modifier: Modifier = Modifier) {
+fun NewsLazyColumn(
+    viewModel: NewsViewModel,
+    modifier: Modifier = Modifier
+) {
+    val articlesPaginatedList =
+        viewModel.articlesList.collectAsLazyPagingItems().itemSnapshotList
     LazyColumn {
-        items(newsList) {
+        items(articlesPaginatedList) {
             NewsCard(it)
         }
     }
@@ -165,12 +164,12 @@ fun NewsLazyColumn(newsList: List<ArticlesItem>, modifier: Modifier = Modifier) 
 @Preview
 @Composable
 private fun NewsLazyColumnPreview() {
-    NewsLazyColumn(listOf())
+    NewsLazyColumn(viewModel())
 }
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-fun NewsCard(articleItem: ArticlesItem, modifier: Modifier = Modifier) {
+fun NewsCard(articleItem: ArticlesItemDM?, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -180,27 +179,27 @@ fun NewsCard(articleItem: ArticlesItem, modifier: Modifier = Modifier) {
     ) {
         // Image
         GlideImage(
-            articleItem.urlToImage ?: "",
-            contentDescription = articleItem.description,
+            articleItem?.urlToImage ?: "",
+            contentDescription = articleItem?.description,
             modifier = Modifier
                 .height(200.dp)
                 .fillMaxWidth()
         )
         // Title
         Text(
-            articleItem.title ?: "",
+            articleItem?.title ?: "",
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp,
             color = MaterialTheme.colorScheme.onBackground
         )
         Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = "By : ${articleItem.author}",
+                text = "By : ${articleItem?.author}",
                 color = gray,
                 fontWeight = FontWeight.W500,
             )
             Text(
-                text = articleItem.publishedAt ?: "",
+                text = articleItem?.publishedAt ?: "",
                 color = gray,
                 fontWeight = FontWeight.W500,
             )
@@ -214,7 +213,7 @@ fun NewsCard(articleItem: ArticlesItem, modifier: Modifier = Modifier) {
 @Composable
 private fun NewsCardPreview() {
     NewsCard(
-        ArticlesItem(
+        ArticlesItemDM(
             publishedAt = "21-9-2025",
             author = "BBC News",
             description = "News Description",
@@ -224,54 +223,4 @@ private fun NewsCardPreview() {
     )
 }
 
-fun getSources(categoryApiId: String, onResponse: (List<SourcesItemDM>) -> Unit) {
-    ApiManager.getNewsService().getSources(categoryApiID = categoryApiId)
-        .enqueue(object : Callback<SourcesResponse> {
-            override fun onResponse(
-                call: Call<SourcesResponse?>,
-                response: Response<SourcesResponse?>
-            ) {
-                if (response.isSuccessful) {
-                    // Handle Success State
-                    val responseBody = response.body()
-                    Log.e("TAG", "onResponse status : ${responseBody?.status}")
-                    Log.e("TAG", "onResponse sources : ${responseBody?.sources}")
-                    onResponse(responseBody?.sources ?: listOf())
-
-                } else {
-                    // Handle Error State
-                    Log.e("TAG", "onResponse: Error : ${response.code()}")
-                }
-            }
-
-            override fun onFailure(call: Call<SourcesResponse?>, t: Throwable) {
-                Log.e("TAG", "onResponse: Error : ${t.message}")
-            }
-
-        })  // background thread .
-}
-
-fun getNewsBySource(sourceId: String, onResponse: (List<ArticlesItem>) -> Unit) {
-    ApiManager.getNewsService().getNewsBySource(sourceId = sourceId)
-        .enqueue(object : Callback<NewsResponse> {
-            override fun onResponse(
-                call: Call<NewsResponse?>,
-                response: Response<NewsResponse?>
-            ) {
-                if (response.isSuccessful) {
-                    onResponse(response.body()?.articles ?: listOf())
-                } else {
-                    Log.e("TAG", "onResponse: on Error")
-                }
-            }
-
-            override fun onFailure(
-                call: Call<NewsResponse?>,
-                t: Throwable
-            ) {
-                Log.e("TAG", "onFailure: ${t.message}")
-            }
-
-        })
-}
 

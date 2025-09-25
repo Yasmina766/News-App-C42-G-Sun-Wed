@@ -8,13 +8,13 @@ data class NewsResponse(
     val totalResults: Int? = null,
 
     @field:SerializedName("articles")
-    val articles: List<ArticlesItem>? = null,
+    val articles: List<ArticlesItemDM>? = null,
 
     @field:SerializedName("status")
     val status: String? = null
 )
 
-data class ArticlesItem(
+data class ArticlesItemDM(
 
     @field:SerializedName("publishedAt")
     val publishedAt: String? = null,
