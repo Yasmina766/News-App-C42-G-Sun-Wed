@@ -66,8 +66,7 @@ class MainActivity : ComponentActivity() {
                            onCloseSearch = {isSearching = false
                                searchQuery = ""
                            })
-                        }
-                        else
+                        } else
                         NewsToolbar(title = title.value, onSearchClick = {isSearching = true}, onMenuButtonClick = {})
                     },
                 ) { innerPadding ->

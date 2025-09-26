@@ -422,6 +422,7 @@ fun NewsSearchBar(query:String,
     )
 }
 
+
 @Preview()
 @Composable
 private fun NewsSearchBarPreview() {
