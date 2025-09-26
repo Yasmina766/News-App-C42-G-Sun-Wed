@@ -21,8 +21,8 @@ data class CategoryDM(
                     R.drawable.entertainment,
                     "entertainment"
                 ),
-                CategoryDM(title = R.string.science, R.drawable.science, "science"),
                 CategoryDM(title = R.string.medicine, R.drawable.medicine, "health"),
+                CategoryDM(title = R.string.science, R.drawable.science, "science"),
 
                 )
         }

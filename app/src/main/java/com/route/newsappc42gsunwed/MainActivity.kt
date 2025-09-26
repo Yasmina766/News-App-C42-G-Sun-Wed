@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.compose.NavHost
@@ -22,6 +24,7 @@ import com.route.newsappc42gsunwed.ui.routes.CategoriesDestination
 import com.route.newsappc42gsunwed.ui.routes.NewsDestination
 import com.route.newsappc42gsunwed.ui.screens.categories.CategoriesScreen
 import com.route.newsappc42gsunwed.ui.screens.news.NewsScreen
+import com.route.newsappc42gsunwed.ui.screens.news.NewsSearchBar
 import com.route.newsappc42gsunwed.ui.theme.NewsAppC42GSunWedTheme
 
 class MainActivity : ComponentActivity() {
@@ -29,6 +32,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge() // android 15 -> Forced to Enable Edge-to-edge
         setContent {
+
             NewsAppC42GSunWedTheme {
                 LaunchedEffect(Unit) {
 //                    getSources()
@@ -37,13 +41,34 @@ class MainActivity : ComponentActivity() {
                 val title = remember {
                     mutableStateOf(homeText)
                 }
+                var isSearching by remember {
+                    mutableStateOf(false)
+                }
+                var searchQuery by remember {
+                    mutableStateOf("")
+                }
                 val navController = rememberNavController()
                 Scaffold(
                     modifier = Modifier
                         .fillMaxSize()
                         .navigationBarsPadding(),
                     topBar = {
-                        NewsToolbar(title = title.value, onSearchClick = {}, onMenuButtonClick = {})
+                        if(isSearching)
+                        {
+                            NewsSearchBar(
+                           query = searchQuery,
+                           changedQuery = {
+                               searchQuery = it
+                           },
+                           deleteClick = {
+                               searchQuery = ""
+                           },
+                           onCloseSearch = {isSearching = false
+                               searchQuery = ""
+                           })
+                        }
+                        else
+                        NewsToolbar(title = title.value, onSearchClick = {isSearching = true}, onMenuButtonClick = {})
                     },
                 ) { innerPadding ->
                     // Navigation Component ->
@@ -61,7 +86,10 @@ class MainActivity : ComponentActivity() {
                         }
                         composable<NewsDestination> {
                             val destination = it.toRoute<NewsDestination>()
-                            NewsScreen(destination.categoryAPIId ?: "")
+                            NewsScreen(destination.categoryAPIId ?: "",
+                                isSearching = isSearching,
+                                searchQuery = searchQuery
+                            )
                         }
                     }
                 }
